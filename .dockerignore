@@ -1,0 +1,22 @@
+# Gradle/IDE/OS build artifacts
+.gradle
+build
+out
+!gradle/wrapper/**
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# OS
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Node (혹시 프론트 모듈 동봉되는 경우)
+node_modules
+
+

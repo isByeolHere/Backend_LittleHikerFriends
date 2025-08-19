@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Little Hiker Friends API 문서</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .get { background: #28a745; color: white; }
+        .post { background: #007bff; color: white; }
+        .put { background: #ffc107; color: black; }
+        .delete { background: #dc3545; color: white; }
+        .code {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+        .swift-code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .section {
+            margin: 40px 0;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 5px 0;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏔️ Little Hiker Friends API</h1>
+        <p>등산 그룹 위치 공유 및 메시징 API 문서</p>
+        <p><strong>Base URL:</strong> <code>http://localhost:8080/api</code></p>
+    </div>
+
+    <div class="toc">
+        <h2>📋 목차</h2>
+        <ul>
+            <li><a href="#auth">🔐 인증 API</a></li>
+            <li><a href="#location">📍 위치 API</a></li>
+            <li><a href="#hike">🏔️ 등산 모임 API</a></li>
+            <li><a href="#message">💬 메시지 API</a></li>
+            <li><a href="#swift-examples">📱 Swift 코드 예시</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="auth">
+        <h2>🔐 인증 API</h2>
+        
+        <div class="endpoint">
+            <h3><span class="method post">POST</span> /auth/login</h3>
+            <p><strong>설명:</strong> 이메일과 비밀번호로 로그인</p>
+            
+            <h4>요청 Body:</h4>
+            <div class="code">
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+            </div>
+            
+            <h4>응답:</h4>
+            <div class="code">
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 123,
+    "email": "user@example.com",
+    "nickname": "등산러버",
+    "imageUrl": "https://example.com/profile.jpg",
+    "provider": "EMAIL"
+  }
+}
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="location">
+        <h2>📍 위치 API</h2>
+        
+        <div class="endpoint">
+            <h3><span class="method post">POST</span> /locations</h3>
+            <p><strong>설명:</strong> 사용자의 현재 위치 업데이트</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>요청 Body:</h4>
+            <div class="code">
+{
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "altitude": 123.5
+}
+            </div>
+            
+            <h4>응답:</h4>
+            <div class="code">
+{
+  "id": 1,
+  "userId": 123,
+  "userNickname": "등산러버",
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "altitude": 123.5,
+  "timestamp": "2025-08-15T10:30:00"
+}
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span> /locations/hikes/{hikeId}/members</h3>
+            <p><strong>설명:</strong> 등산 모임 멤버들의 최신 위치 조회</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>Path Parameters:</h4>
+            <table class="table">
+                <tr><th>이름</th><th>타입</th><th>설명</th><th>예시</th></tr>
+                <tr><td>hikeId</td><td>integer</td><td>등산 모임 ID</td><td>1</td></tr>
+            </table>
+            
+            <h4>응답:</h4>
+            <div class="code">
+[
+  {
+    "id": 1,
+    "userId": 123,
+    "userNickname": "등산러버",
+    "latitude": 37.5665,
+    "longitude": 126.9780,
+    "altitude": 123.5,
+    "timestamp": "2025-08-15T10:30:00"
+  },
+  {
+    "id": 2,
+    "userId": 124,
+    "userNickname": "산악인",
+    "latitude": 37.5670,
+    "longitude": 126.9785,
+    "altitude": 125.0,
+    "timestamp": "2025-08-15T10:31:00"
+  }
+]
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span> /locations/nearby</h3>
+            <p><strong>설명:</strong> 특정 지점 주변의 위치들 조회</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>Query Parameters:</h4>
+            <table class="table">
+                <tr><th>이름</th><th>타입</th><th>필수</th><th>설명</th><th>예시</th></tr>
+                <tr><td>latitude</td><td>double</td><td>✅</td><td>위도</td><td>37.5665</td></tr>
+                <tr><td>longitude</td><td>double</td><td>✅</td><td>경도</td><td>126.9780</td></tr>
+                <tr><td>radiusMeters</td><td>double</td><td>❌</td><td>검색 반경 (미터)</td><td>1000</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section" id="hike">
+        <h2>🏔️ 등산 모임 API</h2>
+        
+        <div class="endpoint">
+            <h3><span class="method get">GET</span> /hikes</h3>
+            <p><strong>설명:</strong> 등산 모임 목록 조회</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>Query Parameters:</h4>
+            <table class="table">
+                <tr><th>이름</th><th>타입</th><th>필수</th><th>설명</th><th>예시</th></tr>
+                <tr><td>status</td><td>string</td><td>❌</td><td>상태 필터 (PLANNED, IN_PROGRESS, COMPLETED)</td><td>PLANNED</td></tr>
+                <tr><td>mountainName</td><td>string</td><td>❌</td><td>산 이름으로 검색</td><td>한라산</td></tr>
+            </table>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span> /hikes</h3>
+            <p><strong>설명:</strong> 새로운 등산 모임 생성</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>요청 Body:</h4>
+            <div class="code">
+{
+  "name": "한라산 정상 도전",
+  "mountainName": "한라산",
+  "startAt": "2025-08-20T09:00:00"
+}
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="message">
+        <h2>💬 메시지 API</h2>
+        
+        <div class="endpoint">
+            <h3><span class="method get">GET</span> /hikes/{hikeId}/messages</h3>
+            <p><strong>설명:</strong> 등산 모임의 메시지들 조회 (페이징 지원)</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>Query Parameters:</h4>
+            <table class="table">
+                <tr><th>이름</th><th>타입</th><th>필수</th><th>설명</th><th>기본값</th></tr>
+                <tr><td>page</td><td>integer</td><td>❌</td><td>페이지 번호</td><td>0</td></tr>
+                <tr><td>size</td><td>integer</td><td>❌</td><td>페이지 크기</td><td>20</td></tr>
+            </table>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span> /hikes/{hikeId}/messages</h3>
+            <p><strong>설명:</strong> 등산 모임에 메시지 전송</p>
+            <p><strong>인증:</strong> Bearer Token 필요</p>
+            
+            <h4>요청 Body (일반 메시지):</h4>
+            <div class="code">
+{
+  "content": "안녕하세요! 등산 준비 완료했습니다."
+}
+            </div>
+            
+            <h4>요청 Body (위치 기반 메시지):</h4>
+            <div class="code">
+{
+  "content": "여기 경치가 정말 좋네요!",
+  "latitude": 37.5665,
+  "longitude": 126.9780
+}
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="swift-examples">
+        <h2>📱 Swift 코드 예시</h2>
+        
+        <h3>1. 위치 업데이트</h3>
+        <div class="swift-code">
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">LocationRequest</span>: <span style="color: #4ec9b0;">Codable</span> {
+    <span style="color: #569cd6;">let</span> latitude: <span style="color: #4ec9b0;">Double</span>
+    <span style="color: #569cd6;">let</span> longitude: <span style="color: #4ec9b0;">Double</span>
+    <span style="color: #569cd6;">let</span> altitude: <span style="color: #4ec9b0;">Double</span>?
+}
+
+<span style="color: #569cd6;">func</span> updateLocation(latitude: <span style="color: #4ec9b0;">Double</span>, longitude: <span style="color: #4ec9b0;">Double</span>, altitude: <span style="color: #4ec9b0;">Double</span>?) {
+    <span style="color: #569cd6;">let</span> url = <span style="color: #4ec9b0;">URL</span>(string: <span style="color: #ce9178;">"http://localhost:8080/api/locations"</span>)!
+    <span style="color: #569cd6;">var</span> request = <span style="color: #4ec9b0;">URLRequest</span>(url: url)
+    request.httpMethod = <span style="color: #ce9178;">"POST"</span>
+    request.setValue(<span style="color: #ce9178;">"application/json"</span>, forHTTPHeaderField: <span style="color: #ce9178;">"Content-Type"</span>)
+    request.setValue(<span style="color: #ce9178;">"Bearer YOUR_TOKEN"</span>, forHTTPHeaderField: <span style="color: #ce9178;">"Authorization"</span>)
+    
+    <span style="color: #569cd6;">let</span> locationData = <span style="color: #4ec9b0;">LocationRequest</span>(
+        latitude: latitude,
+        longitude: longitude,
+        altitude: altitude
+    )
+    
+    <span style="color: #569cd6;">do</span> {
+        request.httpBody = <span style="color: #569cd6;">try</span> <span style="color: #4ec9b0;">JSONEncoder</span>().encode(locationData)
+        
+        <span style="color: #4ec9b0;">URLSession</span>.shared.dataTask(with: request) { data, response, error <span style="color: #569cd6;">in</span>
+            <span style="color: #608b4e;">// 응답 처리</span>
+        }.resume()
+    } <span style="color: #569cd6;">catch</span> {
+        print(<span style="color: #ce9178;">"인코딩 에러: \(error)"</span>)
+    }
+}
+        </div>
+
+        <h3>2. 등산 모임 멤버 위치 조회</h3>
+        <div class="swift-code">
+<span style="color: #569cd6;">func</span> getHikeMembersLocations(hikeId: <span style="color: #4ec9b0;">Int</span>, completion: <span style="color: #569cd6;">@escaping</span> ([<span style="color: #4ec9b0;">LocationResponse</span>]) -> <span style="color: #4ec9b0;">Void</span>) {
+    <span style="color: #569cd6;">let</span> url = <span style="color: #4ec9b0;">URL</span>(string: <span style="color: #ce9178;">"http://localhost:8080/api/locations/hikes/\(hikeId)/members"</span>)!
+    <span style="color: #569cd6;">var</span> request = <span style="color: #4ec9b0;">URLRequest</span>(url: url)
+    request.setValue(<span style="color: #ce9178;">"Bearer YOUR_TOKEN"</span>, forHTTPHeaderField: <span style="color: #ce9178;">"Authorization"</span>)
+    
+    <span style="color: #4ec9b0;">URLSession</span>.shared.dataTask(with: request) { data, response, error <span style="color: #569cd6;">in</span>
+        <span style="color: #569cd6;">if</span> <span style="color: #569cd6;">let</span> data = data {
+            <span style="color: #569cd6;">do</span> {
+                <span style="color: #569cd6;">let</span> locations = <span style="color: #569cd6;">try</span> <span style="color: #4ec9b0;">JSONDecoder</span>().decode([<span style="color: #4ec9b0;">LocationResponse</span>].<span style="color: #569cd6;">self</span>, from: data)
+                <span style="color: #4ec9b0;">DispatchQueue</span>.main.async {
+                    completion(locations)
+                }
+            } <span style="color: #569cd6;">catch</span> {
+                print(<span style="color: #ce9178;">"디코딩 에러: \(error)"</span>)
+            }
+        }
+    }.resume()
+}
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 50px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+        <p><strong>📚 더 자세한 정보는 Swagger UI에서 확인하세요!</strong></p>
+        <p>서버 실행 후: <a href="http://localhost:8080/swagger-ui.html" target="_blank">http://localhost:8080/swagger-ui.html</a></p>
+    </div>
+</body>
+</html>

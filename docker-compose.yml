@@ -1,0 +1,63 @@
+# -----------------------------------------------------------------------------
+# docker-compose: 개발 환경 일괄 구동 (Spring Boot + PostgreSQL/PostGIS)
+# - `docker-compose up -d` 한 번으로 DB와 앱이 함께 실행됩니다.
+# - 두 서비스가 같은 bridge 네트워크에서 통신하도록 구성했습니다.
+# -----------------------------------------------------------------------------
+services:
+  # 데이터베이스(PostgreSQL 15 + PostGIS 3.4)
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: hiking-db
+    restart: unless-stopped
+    environment:
+      # 초기 유저/비밀번호/DB 이름
+      POSTGRES_USER: hiker
+      POSTGRES_PASSWORD: hikerpassword
+      POSTGRES_DB: hiking_db
+    ports:
+      # 호스트 5433 → 컨테이너 5432(PostgreSQL 기본 포트)
+      - "5433:5432"
+    volumes:
+      # 컨테이너 재시작/재생성에도 데이터 유지
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      # DB가 연결 가능(ready)해질 때까지 상태 확인
+      test: ["CMD-SHELL", "pg_isready -U hiker -d hiking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # 스프링 부트 애플리케이션
+  app:
+    build: .  # 루트의 Dockerfile로 이미지 빌드
+    container_name: hiking-app
+    restart: unless-stopped
+    depends_on:
+      # DB가 healthy 상태가 된 이후 앱 시작
+      db:
+        condition: service_healthy
+    environment:
+      # DB 접속 정보를 환경 변수로 주입 (하드코딩 금지)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hiking_db
+      SPRING_DATASOURCE_USERNAME: hiker
+      SPRING_DATASOURCE_PASSWORD: hikerpassword
+      # 필요 시 프로파일 지정(선택)
+      # SPRING_PROFILES_ACTIVE: docker
+    ports:
+      # 호스트 8080 → 컨테이너 8080 (Spring Boot 기본 포트)
+      - "8080:8080"
+    networks:
+      - app_network
+
+volumes:
+  # DB 영속 저장용 named volume
+  db_data:
+
+networks:
+  # 두 서비스가 같은 브리지 네트워크에서 통신
+  app_network:
+    driver: bridge
+
+
