@@ -20,6 +20,17 @@ public class HealthController {
         body.put("timestamp", Instant.now().toString());
         return ResponseEntity.ok(body);
     }
+    
+    // 루트 경로 매핑 추가
+    @GetMapping("/")
+    public ResponseEntity<Map<String, Object>> root() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", "Little Hiker Friends API");
+        body.put("status", "running");
+        body.put("version", "1.0.0");
+        body.put("timestamp", Instant.now().toString());
+        return ResponseEntity.ok(body);
+    }
 }
 
 
