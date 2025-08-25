@@ -34,9 +34,6 @@ bin/
 /nbdist/
 /.nb-gradle/
 
-# VS Code
-.vscode/
-
 # macOS
 .DS_Store
 
@@ -103,3 +100,29 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+# 컴파일된 클래스 파일
+*.class
+
+# JAR 파일 (wrapper 제외)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# WAR 파일
+*.war
+
+# EAR 파일
+*.ear
+
+# 패키지 파일
+*.nar
+
+# BlueJ 파일
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# 가상 머신 크래시 로그
+hs_err_pid*
+replay_pid*
