@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -16,9 +17,15 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     
+    @Autowired
+    private CorsConfigurationSource corsConfigurationSource;
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // CORS 설정 적용
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            
             // CSRF 비활성화 (REST API이므로)
             .csrf(csrf -> csrf.disable())
             
@@ -36,7 +43,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/health/**").permitAll()         // 헬스체크
                 .requestMatchers("/api/auth/**").permitAll()           // 회원가입, 로그인
                 .requestMatchers("/swagger-ui/**").permitAll()         // Swagger UI
+                .requestMatchers("/swagger-ui.html").permitAll()       // Swagger UI (구버전 호환)
                 .requestMatchers("/api-docs/**").permitAll()           // API 문서
+                .requestMatchers("/v3/api-docs/**").permitAll()        // OpenAPI 3.0 문서
                 .requestMatchers("/actuator/health").permitAll()       // 헬스체크
                 .requestMatchers("/h2-console/**").permitAll()         // H2 콘솔 (개발용)
                 
