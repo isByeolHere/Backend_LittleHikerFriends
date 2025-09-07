@@ -1,6 +1,7 @@
 package com.littlehikerfriends.entity;
 
 import jakarta.persistence.*;
+import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
 
 @Entity
@@ -14,7 +15,7 @@ public class Location {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    // 임시로 위도/경도를 별도 컬럼으로 저장 (H2 테스트용)
+    // 위도/경도 (조회 편의용)
     @Column(nullable = false)
     private Double latitude;
     
@@ -23,12 +24,16 @@ public class Location {
     
     private Double altitude;
     
-    @Column(nullable = false)
-    private LocalDateTime timestamp;
+    // PostGIS Point 타입 (지리적 계산용)
+    @Column(name = "geom", columnDefinition = "geometry(Point,4326)")
+    private Point geom;
+    
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
     
     // 기본 생성자
     public Location() {
-        this.timestamp = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
     // 편의 생성자
@@ -37,7 +42,7 @@ public class Location {
         this.latitude = latitude;
         this.longitude = longitude;
         this.altitude = altitude;
-        this.timestamp = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
     // Getters and Setters
@@ -56,6 +61,9 @@ public class Location {
     public Double getAltitude() { return altitude; }
     public void setAltitude(Double altitude) { this.altitude = altitude; }
     
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Point getGeom() { return geom; }
+    public void setGeom(Point geom) { this.geom = geom; }
+    
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

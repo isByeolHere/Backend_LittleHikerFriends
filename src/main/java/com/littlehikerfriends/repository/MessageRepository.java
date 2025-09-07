@@ -4,8 +4,6 @@ import com.littlehikerfriends.entity.Message;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -47,19 +45,6 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     
     // 위치 기반 메시지 개수
     long countByHikeIdAndLocationIsNotNull(Integer hikeId);
-    
-    // 특정 위치 주변의 메시지들 조회 (PostGIS 활용)
-    @Query(value = "SELECT m.* FROM messages m " +
-                   "JOIN locations l ON m.location_id = l.id " +
-                   "WHERE m.hike_id = :hikeId " +
-                   "AND ST_DWithin(l.geom, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326), :distanceMeters) " +
-                   "ORDER BY m.created_at DESC", 
-           nativeQuery = true)
-    List<Message> findLocationBasedMessagesNearby(
-        @Param("hikeId") Integer hikeId,
-        @Param("latitude") double latitude, 
-        @Param("longitude") double longitude, 
-        @Param("distanceMeters") double distanceMeters);
     
     // 최근 N개의 메시지 조회
     List<Message> findTop10ByHikeIdOrderByCreatedAtDesc(Integer hikeId);
