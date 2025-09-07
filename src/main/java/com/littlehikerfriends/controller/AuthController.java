@@ -24,14 +24,14 @@ public class AuthController {
         this.userService = userService;
     }
     
-    @PostMapping("/signup")
-    @Operation(summary = "회원가입", description = "이메일과 비밀번호로 새 계정을 생성합니다.")
+    @PostMapping("/email-signup")
+    @Operation(summary = "이메일 회원가입", description = "이메일과 비밀번호로 새 계정을 생성합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "회원가입 성공"),
         @ApiResponse(responseCode = "400", description = "입력 데이터가 올바르지 않음"),
         @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일")
     })
-    public ResponseEntity<UserResponse> signup(@RequestBody @Valid SignupRequest request) {
+    public ResponseEntity<UserResponse> emailSignup(@RequestBody @Valid SignupRequest request) {
         // UserService의 signup 메서드 호출
         UserResponse userResponse = userService.signup(request);
         
@@ -39,14 +39,14 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
     
-    @PostMapping("/login")
+    @PostMapping("/email-login")
     @Operation(summary = "이메일 로그인", description = "이메일과 비밀번호로 로그인합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공"),
         @ApiResponse(responseCode = "400", description = "입력 데이터가 올바르지 않음"),
         @ApiResponse(responseCode = "401", description = "인증 실패 (이메일 또는 비밀번호 오류)")
     })
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<LoginResponse> emailLogin(@RequestBody @Valid LoginRequest request) {
         try {
             LoginResponse response = userService.login(request);
             return ResponseEntity.ok(response);
@@ -56,23 +56,38 @@ public class AuthController {
         }
     }
     
-    @PostMapping("/social-login")
-    @Operation(summary = "소셜 로그인", description = "카카오, 애플, 구글 소셜 로그인을 처리합니다.")
+    @PostMapping("/social-login-check")
+    @Operation(summary = "소셜 로그인 체크", description = "소셜 토큰으로 기존 회원인지 확인합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "로그인 성공"),
-        @ApiResponse(responseCode = "201", description = "신규 사용자 생성 및 로그인 성공"),
+        @ApiResponse(responseCode = "200", description = "체크 완료 - 기존 회원이면 로그인 정보, 신규면 임시 토큰 반환"),
         @ApiResponse(responseCode = "400", description = "입력 데이터가 올바르지 않음"),
         @ApiResponse(responseCode = "401", description = "소셜 토큰 검증 실패")
     })
-    public ResponseEntity<LoginResponse> socialLogin(@RequestBody @Valid SocialLoginRequest request) {
+    public ResponseEntity<SocialLoginCheckResponse> socialLoginCheck(@RequestBody @Valid SocialLoginCheckRequest request) {
         try {
-            LoginResponse response = userService.socialLogin(request);
-            
-            // 신규 사용자 생성인지 기존 사용자 로그인인지에 따라 상태코드 구분
-            // 실제로는 UserService에서 구분 정보를 제공해야 하지만, 일단 200으로 통일
+            SocialLoginCheckResponse response = userService.socialLoginCheck(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            // 소셜 로그인 실패시 401 Unauthorized 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+    
+    @PostMapping("/profile-create")
+    @Operation(summary = "프로필 생성", description = "소셜 토큰으로 닉네임과 프로필 이미지를 설정하여 회원가입을 완료합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "회원가입 완료"),
+        @ApiResponse(responseCode = "400", description = "입력 데이터가 올바르지 않음"),
+        @ApiResponse(responseCode = "401", description = "소셜 토큰이 유효하지 않음"),
+        @ApiResponse(responseCode = "409", description = "이미 가입된 사용자")
+    })
+    public ResponseEntity<LoginResponse> createProfile(@RequestBody @Valid ProfileCreateRequest request) {
+        try {
+            LoginResponse response = userService.createProfile(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("이미 가입된")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }

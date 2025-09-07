@@ -85,4 +85,49 @@ public class JwtUtil {
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
+    
+    /**
+     * 임시 토큰 생성 (프로필 생성용, 10분 유효)
+     */
+    public String generateTempToken(String email, String provider) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + 1800000); // 30분
+        
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("provider", provider)
+                .claim("type", "temp")
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(getSigningKey())
+                .compact();
+    }
+    
+    /**
+     * 임시 토큰 검증
+     */
+    public boolean validateTempToken(String token) {
+        try {
+            Claims claims = getClaimsFromToken(token);
+            return "temp".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 임시 토큰에서 이메일 추출
+     */
+    public String getEmailFromTempToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.getSubject();
+    }
+    
+    /**
+     * 임시 토큰에서 Provider 추출
+     */
+    public String getProviderFromTempToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("provider", String.class);
+    }
 }
