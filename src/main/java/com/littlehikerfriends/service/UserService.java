@@ -21,15 +21,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final SocialAuthService socialAuthService;
     
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
     
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, SocialAuthService socialAuthService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.socialAuthService = socialAuthService;
     }
     
     /**
@@ -194,5 +196,72 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean isEmailExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+    
+    /**
+     * 소셜 로그인 체크 - 기존 회원인지 확인
+     */
+    public SocialLoginCheckResponse socialLoginCheck(SocialLoginCheckRequest request) {
+        // 1. 소셜 토큰으로 이메일 조회
+        String email = socialAuthService.getEmailFromSocialToken(request.getProvider(), request.getSocialToken());
+        
+        // 2. 기존 사용자 조회
+        Optional<User> existingUser = userRepository.findByEmailAndProvider(email, request.getProvider());
+        
+        if (existingUser.isPresent()) {
+            // 기존 회원 - 바로 로그인 처리
+            User user = existingUser.get();
+            String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getProvider());
+            
+            LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
+                user.getId(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getImageUrl(),
+                user.getProvider()
+            );
+            
+            LoginResponse loginResponse = new LoginResponse(token, jwtExpiration / 1000, userInfo);
+            return new SocialLoginCheckResponse(true, email, loginResponse);
+            
+        } else {
+            // 신규 회원 - 이메일만 반환
+            return new SocialLoginCheckResponse(false, email);
+        }
+    }
+    
+    /**
+     * 프로필 생성으로 회원가입 완료
+     */
+    public LoginResponse createProfile(ProfileCreateRequest request) {
+        // 1. 소셜 토큰으로 이메일 조회
+        String email = socialAuthService.getEmailFromSocialToken(request.getProvider(), request.getSocialToken());
+        
+        // 2. 이미 가입된 사용자인지 확인
+        if (userRepository.existsByEmailAndProvider(email, request.getProvider())) {
+            throw new RuntimeException("이미 가입된 사용자입니다");
+        }
+        
+        // 3. 사용자 생성
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setNickname(request.getNickname());
+        newUser.setImageUrl(request.getImageUrl());
+        newUser.setProvider(request.getProvider());
+        
+        User savedUser = userRepository.save(newUser);
+        
+        // 4. JWT 토큰 발급
+        String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.getProvider());
+        
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
+            savedUser.getId(),
+            savedUser.getEmail(),
+            savedUser.getNickname(),
+            savedUser.getImageUrl(),
+            savedUser.getProvider()
+        );
+        
+        return new LoginResponse(token, jwtExpiration / 1000, userInfo);
     }
 }
