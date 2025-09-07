@@ -33,6 +33,13 @@ public class User {
     @Column(name = "last_location_id")
     private Integer lastLocationId;
     
+    // JWT Refresh Token 관련 필드 (NEW!)
+    @Column(name = "refresh_token", unique = true, length = 500)
+    private String refreshToken;
+    
+    @Column(name = "refresh_token_expires_at")
+    private LocalDateTime refreshTokenExpiresAt;
+    
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -83,6 +90,12 @@ public class User {
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+    
+    public LocalDateTime getRefreshTokenExpiresAt() { return refreshTokenExpiresAt; }
+    public void setRefreshTokenExpiresAt(LocalDateTime refreshTokenExpiresAt) { this.refreshTokenExpiresAt = refreshTokenExpiresAt; }
     
     public List<HikeMember> getHikeMembers() { return hikeMembers; }
     public void setHikeMembers(List<HikeMember> hikeMembers) { this.hikeMembers = hikeMembers; }

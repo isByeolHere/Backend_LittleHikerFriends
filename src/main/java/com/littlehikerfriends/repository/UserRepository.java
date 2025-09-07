@@ -16,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     // 이메일로 사용자 찾기 (로그인 시 사용)
     Optional<User> findByEmail(String email);
     
+    // 이메일과 Provider로 사용자 찾기 (로그인 시 사용)
+    Optional<User> findByEmailAndProvider(String email, Provider provider);
+    
     // 소셜 로그인용: provider와 providerId로 사용자 찾기
     Optional<User> findByProviderAndProviderId(Provider provider, String providerId);
     
@@ -27,6 +30,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     // 이메일 중복 체크
     boolean existsByEmail(String email);
+    
+    // 이메일과 Provider 조합 중복 체크
+    boolean existsByEmailAndProvider(String email, Provider provider);
     
     // 소셜 로그인 ID 중복 체크
     boolean existsByProviderAndProviderId(Provider provider, String providerId);

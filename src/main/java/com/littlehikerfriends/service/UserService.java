@@ -1,15 +1,18 @@
 package com.littlehikerfriends.service;
 
-import com.littlehikerfriends.dto.SignupRequest;
-import com.littlehikerfriends.dto.UserResponse;
+import com.littlehikerfriends.config.JwtUtil;
+import com.littlehikerfriends.dto.*;
 import com.littlehikerfriends.entity.Provider;
 import com.littlehikerfriends.entity.User;
 import com.littlehikerfriends.exception.DuplicateEmailException;
 import com.littlehikerfriends.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -17,11 +20,111 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    
+    @Value("${jwt.expiration}")
+    private Long jwtExpiration;
     
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+    }
+    
+    /**
+     * 이메일 로그인
+     * 
+     * @param request 로그인 요청 데이터
+     * @return JWT 토큰과 사용자 정보
+     * @throws RuntimeException 로그인 실패시
+     */
+    public LoginResponse login(LoginRequest request) {
+        // 1. 이메일과 EMAIL Provider로 사용자 조회
+        Optional<User> userOptional = userRepository.findByEmailAndProvider(request.getEmail(), Provider.EMAIL);
+        
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("존재하지 않는 사용자입니다.");
+        }
+        
+        User user = userOptional.get();
+        
+        // 2. 비밀번호 검증
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 3. JWT 토큰 생성
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getProvider());
+        
+        // 4. 응답 생성
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
+            user.getId(),
+            user.getEmail(),
+            user.getNickname(),
+            user.getImageUrl(),
+            user.getProvider()
+        );
+        
+        return new LoginResponse(token, jwtExpiration / 1000, userInfo); // 초 단위로 변환
+    }
+    
+    /**
+     * 소셜 로그인
+     * 
+     * @param request 소셜 로그인 요청 데이터
+     * @return JWT 토큰과 사용자 정보
+     */
+    public LoginResponse socialLogin(SocialLoginRequest request) {
+        // 1. 기존 사용자 조회 (이메일 + Provider)
+        Optional<User> existingUser = userRepository.findByEmailAndProvider(request.getEmail(), request.getProvider());
+        
+        User user;
+        if (existingUser.isPresent()) {
+            // 2-1. 기존 사용자인 경우 - 정보 업데이트
+            user = existingUser.get();
+            user.setNickname(request.getNickname()); // 닉네임 업데이트
+            if (request.getImageUrl() != null) {
+                user.setImageUrl(request.getImageUrl()); // 프로필 이미지 업데이트
+            }
+            user = userRepository.save(user);
+        } else {
+            // 2-2. 신규 사용자인 경우 - 사용자 생성
+            user = createSocialUser(request);
+        }
+        
+        // 3. JWT 토큰 생성
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getProvider());
+        
+        // 4. 응답 생성
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo(
+            user.getId(),
+            user.getEmail(),
+            user.getNickname(),
+            user.getImageUrl(),
+            user.getProvider()
+        );
+        
+        return new LoginResponse(token, jwtExpiration / 1000, userInfo);
+    }
+    
+    /**
+     * 소셜 사용자 생성
+     */
+    private User createSocialUser(SocialLoginRequest request) {
+        // 같은 이메일로 다른 Provider 사용자가 있는지 확인
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("이미 다른 방식으로 가입된 이메일입니다. (" + request.getEmail() + ")");
+        }
+        
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setNickname(request.getNickname());
+        user.setImageUrl(request.getImageUrl());
+        user.setProvider(request.getProvider());
+        user.setPasswordHash(null); // 소셜 로그인은 비밀번호 없음
+        
+        return userRepository.save(user);
     }
     
     /**
